@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LCL COGS Calculator — Lueur Cosmetics Lab</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --orange: #F5821F;
+    --brown: #3D2314;
+    --cream: #FAF0E6;
+    --peach: #F5D5B8;
+    --white: #FFFFFF;
+    --light-orange: #FEF0E3;
+    --border: #E8C9A8;
+    --text-muted: #8B6B52;
+    --green: #2D8A4E;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Poppins', sans-serif; background: var(--cream); color: var(--brown); min-height: 100vh; }
+
+  .header {
+    background: var(--white); border-bottom: 3px solid var(--peach);
+    padding: 20px 40px; display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(61,35,20,0.08);
+  }
+  .logo-area { display: flex; align-items: center; gap: 12px; }
+  .logo-svg { width: 56px; height: 56px; }
+  .logo-text { display: flex; flex-direction: column; line-height: 1.2; }
+  .logo-text .line1 { font-size: 13px; font-weight: 800; color: var(--brown); letter-spacing: 1px; }
+  .logo-text .line2 { font-size: 13px; font-weight: 800; color: var(--orange); letter-spacing: 1px; }
+  .logo-text .line3 { font-size: 13px; font-weight: 800; color: var(--brown); letter-spacing: 1px; }
+  .header-title { text-align: right; }
+  .header-title h1 { font-size: 18px; font-weight: 700; color: var(--brown); }
+  .header-title p { font-size: 12px; color: var(--text-muted); font-weight: 400; }
+
+  .main { max-width: 780px; margin: 0 auto; padding: 32px 24px 60px; }
+
+  .currency-bar {
+    background: var(--brown); border-radius: 14px; padding: 16px 24px;
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px;
+  }
+  .currency-bar label { color: var(--peach); font-size: 13px; font-weight: 600; letter-spacing: 0.5px; }
+  .currency-toggle { display: flex; background: rgba(255,255,255,0.1); border-radius: 8px; padding: 3px; gap: 3px; }
+  .currency-btn {
+    padding: 7px 20px; border: none; border-radius: 6px;
+    font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s; background: transparent; color: rgba(255,255,255,0.5);
+  }
+  .currency-btn.active { background: var(--orange); color: white; box-shadow: 0 2px 8px rgba(245,130,31,0.4); }
+
+  .section-card {
+    background: var(--white); border-radius: 16px; padding: 28px; margin-bottom: 20px;
+    border: 1.5px solid var(--border); box-shadow: 0 2px 8px rgba(61,35,20,0.05);
+  }
+  .section-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+  .section-num {
+    width: 32px; height: 32px; background: var(--orange); color: white; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; flex-shrink: 0;
+  }
+  .section-title { font-size: 15px; font-weight: 700; color: var(--brown); }
+  .section-subtitle { font-size: 12px; color: var(--text-muted); font-weight: 400; margin-top: 1px; }
+
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .field-row.single { grid-template-columns: 1fr; }
+  .field-row.thirds { grid-template-columns: 1fr 1fr 1fr; }
+  .field-group { display: flex; flex-direction: column; gap: 6px; }
+  .field-label { font-size: 12px; font-weight: 600; color: var(--brown); letter-spacing: 0.3px; }
+  .field-label .optional { font-weight: 400; color: var(--text-muted); font-size: 11px; }
+  .input-wrap { position: relative; display: flex; align-items: center; }
+  .input-prefix { position: absolute; left: 12px; font-size: 13px; font-weight: 600; color: var(--text-muted); pointer-events: none; }
+
+  input[type="number"], input[type="text"], select {
+    width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 8px;
+    font-family: 'Poppins', sans-serif; font-size: 13px; color: var(--brown);
+    background: var(--cream); transition: border-color 0.2s, box-shadow 0.2s; outline: none; appearance: none;
+  }
+  input[type="number"].has-prefix, input[type="text"].has-prefix { padding-left: 30px; }
+  input[type="number"]:focus, input[type="text"]:focus, select:focus {
+    border-color: var(--orange); box-shadow: 0 0 0 3px rgba(245,130,31,0.12); background: var(--white);
+  }
+  select {
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%233D2314' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px;
+  }
+
+  .toggle-row {
+    display: flex; background: var(--cream); border: 1.5px solid var(--border);
+    border-radius: 8px; padding: 3px; gap: 3px; margin-bottom: 16px;
+  }
+  .toggle-opt {
+    flex: 1; padding: 8px; border: none; border-radius: 6px;
+    font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s; background: transparent; color: var(--text-muted); text-align: center;
+  }
+  .toggle-opt.active { background: var(--white); color: var(--brown); box-shadow: 0 1px 4px rgba(61,35,20,0.12); }
+
+  .auto-result {
+    background: var(--light-orange); border: 1.5px solid var(--peach); border-radius: 10px;
+    padding: 12px 16px; margin-top: 4px; display: flex; align-items: center; justify-content: space-between;
+  }
+  .auto-result .ar-label { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+  .auto-result .ar-value { font-size: 15px; font-weight: 700; color: var(--orange); }
+
+  .custom-field-row { display: grid; grid-template-columns: 1fr 1.2fr; gap: 10px; margin-bottom: 12px; align-items: end; }
+  .rename-input { font-style: italic; }
+
+  /* RESULTS */
+  .results-card { background: var(--brown); border-radius: 20px; padding: 32px; margin-top: 8px; color: white; }
+  .results-title { font-size: 13px; font-weight: 600; color: var(--peach); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 20px; }
+
+  .scenarios-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+
+  .scenario-card {
+    background: rgba(255,255,255,0.07); border-radius: 14px; padding: 20px;
+    border: 1.5px solid rgba(255,255,255,0.1);
+  }
+  .scenario-card.recommended {
+    background: var(--orange); border-color: var(--orange);
+    box-shadow: 0 4px 20px rgba(245,130,31,0.35);
+  }
+  .scenario-badge {
+    display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 1px;
+    text-transform: uppercase; padding: 3px 8px; border-radius: 4px;
+    background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.8); margin-bottom: 12px;
+  }
+  .scenario-card.recommended .scenario-badge { background: rgba(255,255,255,0.25); color: white; }
+  .scenario-name { font-size: 13px; font-weight: 700; color: white; margin-bottom: 14px; }
+  .scenario-stat { margin-bottom: 8px; }
+  .scenario-stat .ss-label { font-size: 10px; color: rgba(255,255,255,0.55); font-weight: 500; letter-spacing: 0.3px; margin-bottom: 1px; }
+  .scenario-card.recommended .ss-label { color: rgba(255,255,255,0.75); }
+  .scenario-stat .ss-val { font-size: 16px; font-weight: 700; color: white; }
+  .scenario-stat .ss-val.price { font-size: 22px; }
+  .scenario-margin { margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.15); font-size: 11px; color: rgba(255,255,255,0.6); }
+  .scenario-card.recommended .scenario-margin { border-top-color: rgba(255,255,255,0.25); color: rgba(255,255,255,0.85); }
+
+  .breakdown-bar { margin-bottom: 20px; }
+  .breakdown-bar-title { font-size: 11px; color: var(--peach); font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 10px; }
+  .bar-track { height: 10px; border-radius: 5px; background: rgba(255,255,255,0.1); overflow: hidden; display: flex; margin-bottom: 10px; }
+  .bar-seg { height: 100%; transition: width 0.5s ease; }
+  .bar-seg.product { background: var(--orange); }
+  .bar-seg.packaging { background: #E8A86B; }
+  .bar-seg.other { background: #C4865A; }
+  .bar-legend { display: flex; gap: 16px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: rgba(255,255,255,0.7); }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  .empty-state { text-align: center; padding: 20px; color: rgba(255,255,255,0.4); font-size: 13px; }
+
+  .action-row { display: flex; gap: 12px; margin-top: 20px; }
+  .btn-print {
+    flex: 1; padding: 14px; background: var(--orange); color: white; border: none; border-radius: 10px;
+    font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer;
+    transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-print:hover { background: #E07010; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(245,130,31,0.3); }
+  .btn-reset {
+    padding: 14px 20px; background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7);
+    border: 1.5px solid rgba(255,255,255,0.15); border-radius: 10px;
+    font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-reset:hover { background: rgba(255,255,255,0.14); color: white; }
+
+  .tool-footer { text-align: center; margin-top: 40px; font-size: 11px; color: var(--text-muted); }
+
+  .print-sheet { display: none; }
+
+  @media (max-width: 600px) {
+    .header { padding: 14px 16px; }
+    .field-row, .scenarios-grid { grid-template-columns: 1fr; }
+    .section-card { padding: 20px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo-area">
+    <svg class="logo-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="105" cy="38" r="18" fill="#F5821F"/>
+      <circle cx="138" cy="80" r="24" fill="#F5821F"/>
+      <circle cx="100" cy="108" r="16" fill="#F5821F"/>
+      <ellipse cx="121" cy="59" rx="14" ry="10" fill="#F5821F" transform="rotate(-40 121 59)"/>
+      <ellipse cx="119" cy="94" rx="14" ry="10" fill="#F5821F" transform="rotate(40 119 94)"/>
+      <circle cx="72" cy="108" r="16" fill="#3D2314"/>
+      <circle cx="58" cy="148" r="22" fill="#3D2314"/>
+      <circle cx="90" cy="170" r="12" fill="#3D2314"/>
+      <ellipse cx="65" cy="128" rx="13" ry="9" fill="#3D2314" transform="rotate(-30 65 128)"/>
+      <ellipse cx="74" cy="160" rx="13" ry="9" fill="#3D2314" transform="rotate(30 74 160)"/>
+    </svg>
+    <div class="logo-text">
+      <span class="line1">LUEUR</span>
+      <span class="line2">COSMETICS</span>
+      <span class="line3">LAB</span>
+    </div>
+  </div>
+  <div class="header-title">
+    <h1>COGS Calculator</h1>
+    <p>Product Cost & Pricing Tool</p>
+  </div>
+</div>
+
+<div class="main">
+
+  <div class="currency-bar">
+    <label>Select Currency</label>
+    <div class="currency-toggle">
+      <button class="currency-btn active" onclick="setCurrency('GHS', this)">GHS ₵</button>
+      <button class="currency-btn" onclick="setCurrency('USD', this)">USD $</button>
+    </div>
+  </div>
+
+  <!-- SECTION 1 -->
+  <div class="section-card">
+    <div class="section-header">
+      <div class="section-num">1</div>
+      <div>
+        <div class="section-title">Batch & Fill Details</div>
+        <div class="section-subtitle">How much product did you purchase, and what size are your containers?</div>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field-group">
+        <label class="field-label">Product Name <span class="optional">(optional)</span></label>
+        <input type="text" id="productName" placeholder="e.g. Whipped Body Butter" oninput="calculate()">
+      </div>
+    </div>
+    <div class="field-row thirds">
+      <div class="field-group" style="grid-column:span 2">
+        <label class="field-label">Batch Size Purchased</label>
+        <input type="number" id="batchSize" placeholder="e.g. 5" min="0" step="any" oninput="calculate()">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Unit</label>
+        <select id="batchUnit" onchange="syncUnits(); calculate()">
+          <option value="kg">kg</option>
+          <option value="L">L</option>
+          <option value="g">g</option>
+          <option value="ml">ml</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-row thirds">
+      <div class="field-group" style="grid-column:span 2">
+        <label class="field-label">Fill Volume per Container</label>
+        <input type="number" id="fillVolume" placeholder="e.g. 250" min="0" step="any" oninput="calculate()">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Unit</label>
+        <select id="fillUnit" onchange="calculate()">
+          <option value="ml">ml</option>
+          <option value="g">g</option>
+          <option value="L">L</option>
+          <option value="kg">kg</option>
+        </select>
+      </div>
+    </div>
+    <div class="auto-result">
+      <span class="ar-label">Expected Filled Containers (100% yield)</span>
+      <span class="ar-value" id="fillCount">—</span>
+    </div>
+  </div>
+
+  <!-- SECTION 2 -->
+  <div class="section-card">
+    <div class="section-header">
+      <div class="section-num">2</div>
+      <div>
+        <div class="section-title">Product Content Cost</div>
+        <div class="section-subtitle">What did you pay LCL for the product content?</div>
+      </div>
+    </div>
+    <div class="toggle-row">
+      <button class="toggle-opt active" id="costToggle1" onclick="setCostMode('per-unit')">Cost per kg / L</button>
+      <button class="toggle-opt" id="costToggle2" onclick="setCostMode('total')">Total Batch Cost</button>
+    </div>
+    <div id="costPerUnitField">
+      <div class="field-group">
+        <label class="field-label" id="costPerUnitLabel">Cost per kg / L</label>
+        <div class="input-wrap">
+          <span class="input-prefix" id="costPrefix">₵</span>
+          <input type="number" id="costPerUnit" class="has-prefix" placeholder="0.00" min="0" step="any" oninput="calculate()">
+        </div>
+      </div>
+    </div>
+    <div id="totalCostField" style="display:none">
+      <div class="field-group">
+        <label class="field-label">Total Batch Cost (what you paid)</label>
+        <div class="input-wrap">
+          <span class="input-prefix" id="costPrefix2">₵</span>
+          <input type="number" id="totalBatchCost" class="has-prefix" placeholder="0.00" min="0" step="any" oninput="calculate()">
+        </div>
+      </div>
+    </div>
+    <div class="auto-result" style="margin-top:12px">
+      <span class="ar-label">Total Product Content Cost</span>
+      <span class="ar-value" id="totalProductCostVal">—</span>
+    </div>
+  </div>
+
+  <!-- SECTION 3 -->
+  <div class="section-card">
+    <div class="section-header">
+      <div class="section-num">3</div>
+      <div>
+        <div class="section-title">Packaging Cost</div>
+        <div class="section-subtitle">Cost per container unit (bottle/tube/jar ± box). Auto-multiplied by expected units.</div>
+      </div>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Cost per Container Unit</label>
+      <div class="input-wrap">
+        <span class="input-prefix" id="pkgPrefix">₵</span>
+        <input type="number" id="packagingCost" class="has-prefix" placeholder="0.00" min="0" step="any" oninput="calculate()">
+      </div>
+    </div>
+    <div class="auto-result" style="margin-top:12px">
+      <span class="ar-label">Total Packaging Cost (per unit × filled containers)</span>
+      <span class="ar-value" id="totalPackagingVal">—</span>
+    </div>
+  </div>
+
+  <!-- SECTION 4 -->
+  <div class="section-card">
+    <div class="section-header">
+      <div class="section-num">4</div>
+      <div>
+        <div class="section-title">Additional Costs</div>
+        <div class="section-subtitle">Flat amounts per batch. Rename any field to suit your needs.</div>
+      </div>
+    </div>
+    <div class="field-group" style="margin-bottom:16px">
+      <label class="field-label">Delivery Fee (LCL → You)</label>
+      <div class="input-wrap">
+        <span class="input-prefix" id="addPrefix1">₵</span>
+        <input type="number" id="addCost1" class="has-prefix" placeholder="0.00" min="0" step="any" oninput="calculate()">
+      </div>
+    </div>
+    <div class="custom-field-row">
+      <div class="field-group">
+        <label class="field-label">Rename Field</label>
+        <input type="text" id="customLabel1" value="Shipping Bags / Mailers" class="rename-input" oninput="updateLabel(1)">
+      </div>
+      <div class="field-group">
+        <label class="field-label" id="displayLabel1">Shipping Bags / Mailers</label>
+        <div class="input-wrap">
+          <span class="input-prefix" id="addPrefix2">₵</span>
+          <input type="number" id="addCost2" class="has-prefix" placeholder="0.00" min="0" step="any" oninput="calculate()">
+        </div>
+      </div>
+    </div>
+    <div class="custom-field-row">
+      <div class="field-group">
+        <label class="field-label">Rename Field</label>
+        <input type="text" id="customLabel2" value="Marketing Budget" class="rename-input" oninput="updateLabel(2)">
+      </div>
+      <div class="field-group">
+        <label class="field-label" id="displayLabel2">Marketing Budget</label>
+        <div class="input-wrap">
+          <span class="input-prefix" id="addPrefix3">₵</span>
+          <input type="number" id="addCost3" class="has-prefix" placeholder="0.00" min="0" step="any" oninput="calculate()">
+        </div>
+      </div>
+    </div>
+    <div class="custom-field-row">
+      <div class="field-group">
+        <label class="field-label">Rename Field <span class="optional">(optional)</span></label>
+        <input type="text" id="customLabel3" value="Other" class="rename-input" oninput="updateLabel(3)">
+      </div>
+      <div class="field-group">
+        <label class="field-label" id="displayLabel3">Other</label>
+        <div class="input-wrap">
+          <span class="input-prefix" id="addPrefix4">₵</span>
+          <input type="number" id="addCost4" class="has-prefix" placeholder="0.00" min="0" step="any" oninput="calculate()">
+        </div>
+      </div>
+    </div>
+    <div class="auto-result" style="margin-top:8px">
+      <span class="ar-label">Total Additional Costs</span>
+      <span class="ar-value" id="totalAddVal">—</span>
+    </div>
+  </div>
+
+  <!-- SECTION 5 -->
+  <div class="section-card">
+    <div class="section-header">
+      <div class="section-num">5</div>
+      <div>
+        <div class="section-title">Profit Target</div>
+        <div class="section-subtitle">Set your desired profit per unit — flat or as a percentage of COGS.</div>
+      </div>
+    </div>
+    <div class="toggle-row">
+      <button class="toggle-opt active" id="profitToggle1" onclick="setProfitMode('flat')">Flat Amount per Unit</button>
+      <button class="toggle-opt" id="profitToggle2" onclick="setProfitMode('percent')">% of Unit COGS</button>
+    </div>
+    <div class="field-group">
+      <label class="field-label" id="profitLabel">Profit per Unit</label>
+      <div class="input-wrap">
+        <span class="input-prefix" id="profitPrefix">₵</span>
+        <input type="number" id="profitInput" class="has-prefix" placeholder="0.00" min="0" step="any" oninput="calculate()">
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="results-card">
+    <div class="results-title">📊 Your Results</div>
+    <div id="resultsContent">
+      <div class="empty-state">Fill in your batch details above to see results.</div>
+    </div>
+    <div class="action-row" id="actionRow" style="display:none">
+      <button class="btn-print" onclick="printSheet()">🖨️ Print / Save Summary</button>
+      <button class="btn-reset" onclick="resetAll()">Reset</button>
+    </div>
+  </div>
+
+  <div class="tool-footer">
+    Calculated using the LCL COGS Calculator &mdash; Lueur Cosmetics Lab &copy; 2026
+  </div>
+</div>
+
+<div id="printSheet" class="print-sheet"></div>
+
+<script>
+  let currency = 'GHS';
+  let costMode = 'per-unit';
+  let profitMode = 'flat';
+  let lastData = null;
+
+  const sym = () => currency === 'GHS' ? '₵' : '$';
+
+  function fmt(n) {
+    return sym() + n.toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function setCurrency(c, btn) {
+    currency = c;
+    document.querySelectorAll('.currency-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const pfx = sym();
+    ['costPrefix','costPrefix2','pkgPrefix','addPrefix1','addPrefix2','addPrefix3','addPrefix4'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = pfx;
+    });
+    const pp = document.getElementById('profitPrefix');
+    if (profitMode === 'flat') pp.textContent = pfx;
+    calculate();
+  }
+
+  function syncUnits() {
+    const bu = document.getElementById('batchUnit').value;
+    const fu = document.getElementById('fillUnit');
+    if (bu === 'kg') fu.value = 'g';
+    else if (bu === 'L') fu.value = 'ml';
+    else if (bu === 'g') fu.value = 'ml';
+    else fu.value = 'ml';
+  }
+
+  function setCostMode(mode) {
+    costMode = mode;
+    document.getElementById('costPerUnitField').style.display = mode === 'per-unit' ? 'block' : 'none';
+    document.getElementById('totalCostField').style.display = mode === 'total' ? 'block' : 'none';
+    document.getElementById('costToggle1').classList.toggle('active', mode === 'per-unit');
+    document.getElementById('costToggle2').classList.toggle('active', mode === 'total');
+    const bu = document.getElementById('batchUnit').value;
+    document.getElementById('costPerUnitLabel').textContent = `Cost per ${bu}`;
+    calculate();
+  }
+
+  function setProfitMode(mode) {
+    profitMode = mode;
+    document.getElementById('profitToggle1').classList.toggle('active', mode === 'flat');
+    document.getElementById('profitToggle2').classList.toggle('active', mode === 'percent');
+    const lbl = document.getElementById('profitLabel');
+    const pfx = document.getElementById('profitPrefix');
+    if (mode === 'flat') { lbl.textContent = 'Profit per Unit'; pfx.textContent = sym(); }
+    else { lbl.textContent = 'Profit (% of Unit COGS)'; pfx.textContent = '%'; }
+    calculate();
+  }
+
+  function updateLabel(n) {
+    const val = document.getElementById(`customLabel${n}`).value || `Custom ${n}`;
+    document.getElementById(`displayLabel${n}`).textContent = val;
+    calculate();
+  }
+
+  function toBase(value, unit) {
+    if (unit === 'kg') return value * 1000;
+    if (unit === 'L') return value * 1000;
+    return value;
+  }
+
+  function calcScenario(totalBatch, units, profitInput, profitMode, unitCogsBase) {
+    const unitCOGS = units > 0 ? totalBatch / units : 0;
+    let profitPerUnit = 0;
+    if (profitMode === 'flat') profitPerUnit = profitInput;
+    else profitPerUnit = unitCOGS * (profitInput / 100);
+    const sellingPrice = unitCOGS + profitPerUnit;
+    const grossMargin = sellingPrice > 0 ? (profitPerUnit / sellingPrice * 100) : 0;
+    return { units, unitCOGS, profitPerUnit, sellingPrice, grossMargin };
+  }
+
+  function calculate() {
+    const batchSize = parseFloat(document.getElementById('batchSize').value) || 0;
+    const batchUnit = document.getElementById('batchUnit').value;
+    const fillVolume = parseFloat(document.getElementById('fillVolume').value) || 0;
+    const fillUnit = document.getElementById('fillUnit').value;
+
+    const batchBase = toBase(batchSize, batchUnit);
+    const fillBase = toBase(fillVolume, fillUnit);
+
+    const units100 = fillBase > 0 ? Math.floor(batchBase / fillBase) : 0;
+    const units98 = Math.floor(units100 * 0.98);
+    const units95 = Math.floor(units100 * 0.95);
+
+    document.getElementById('fillCount').textContent = units100 > 0 ? `${units100} units` : '—';
+
+    // Product cost
+    let totalProductCost = 0;
+    if (costMode === 'per-unit') {
+      const cpp = parseFloat(document.getElementById('costPerUnit').value) || 0;
+      const batchMain = (batchUnit === 'g' || batchUnit === 'ml') ? batchSize / 1000 : batchSize;
+      totalProductCost = cpp * batchMain;
+    } else {
+      totalProductCost = parseFloat(document.getElementById('totalBatchCost').value) || 0;
+    }
+    document.getElementById('totalProductCostVal').textContent = totalProductCost > 0 ? fmt(totalProductCost) : '—';
+
+    // Packaging (based on 100% units)
+    const pkgPerUnit = parseFloat(document.getElementById('packagingCost').value) || 0;
+    const totalPackaging = pkgPerUnit * units100;
+    document.getElementById('totalPackagingVal').textContent = totalPackaging > 0 ? fmt(totalPackaging) : '—';
+
+    // Additional
+    const add1 = parseFloat(document.getElementById('addCost1').value) || 0;
+    const add2 = parseFloat(document.getElementById('addCost2').value) || 0;
+    const add3 = parseFloat(document.getElementById('addCost3').value) || 0;
+    const add4 = parseFloat(document.getElementById('addCost4').value) || 0;
+    const totalAdd = add1 + add2 + add3 + add4;
+    document.getElementById('totalAddVal').textContent = totalAdd > 0 ? fmt(totalAdd) : '—';
+
+    const totalBatch = totalProductCost + totalPackaging + totalAdd;
+    const profitInput = parseFloat(document.getElementById('profitInput').value) || 0;
+
+    const rc = document.getElementById('resultsContent');
+    const ar = document.getElementById('actionRow');
+
+    if (units100 === 0 || totalBatch === 0) {
+      rc.innerHTML = '<div class="empty-state">Fill in your batch details above to see results.</div>';
+      ar.style.display = 'none';
+      lastData = null;
+      return;
+    }
+
+    const s100 = calcScenario(totalBatch, units100, profitInput, profitMode);
+    const s98  = calcScenario(totalBatch, units98,  profitInput, profitMode);
+    const s95  = calcScenario(totalBatch, units95,  profitInput, profitMode);
+
+    const pPct = totalBatch > 0 ? (totalProductCost / totalBatch * 100) : 0;
+    const kPct = totalBatch > 0 ? (totalPackaging / totalBatch * 100) : 0;
+    const aPct = totalBatch > 0 ? (totalAdd / totalBatch * 100) : 0;
+
+    rc.innerHTML = `
+      <div style="margin-bottom:20px">
+        <div style="font-size:12px;color:var(--peach);font-weight:600;letter-spacing:0.5px;margin-bottom:14px;text-transform:uppercase">Total Batch Cost: <span style="color:white;font-size:15px">${fmt(totalBatch)}</span></div>
+
+        <div class="scenarios-grid">
+          <!-- 100% -->
+          <div class="scenario-card">
+            <div class="scenario-badge">Ideal Scenario</div>
+            <div class="scenario-name">100% Yield</div>
+            <div class="scenario-stat"><div class="ss-label">Filled Units</div><div class="ss-val">${s100.units}</div></div>
+            <div class="scenario-stat"><div class="ss-label">Unit COGS</div><div class="ss-val">${fmt(s100.unitCOGS)}</div></div>
+            ${profitInput > 0 ? `
+            <div class="scenario-stat"><div class="ss-label">Profit per Unit</div><div class="ss-val">${fmt(s100.profitPerUnit)}</div></div>
+            <div class="scenario-stat"><div class="ss-label">Selling Price</div><div class="ss-val price">${fmt(s100.sellingPrice)}</div></div>
+            <div class="scenario-margin">Gross margin: ${s100.grossMargin.toFixed(1)}%</div>
+            ` : ''}
+          </div>
+
+          <!-- 95% RECOMMENDED -->
+          <div class="scenario-card recommended">
+            <div class="scenario-badge">✦ Recommended</div>
+            <div class="scenario-name">95% Yield (5% Loss)</div>
+            <div class="scenario-stat"><div class="ss-label">Filled Units</div><div class="ss-val">${s95.units}</div></div>
+            <div class="scenario-stat"><div class="ss-label">Unit COGS</div><div class="ss-val">${fmt(s95.unitCOGS)}</div></div>
+            ${profitInput > 0 ? `
+            <div class="scenario-stat"><div class="ss-label">Profit per Unit</div><div class="ss-val">${fmt(s95.profitPerUnit)}</div></div>
+            <div class="scenario-stat"><div class="ss-label">Selling Price</div><div class="ss-val price">${fmt(s95.sellingPrice)}</div></div>
+            <div class="scenario-margin">Gross margin: ${s95.grossMargin.toFixed(1)}%</div>
+            ` : ''}
+          </div>
+        </div>
+
+        ${profitInput > 0 ? `
+        <div style="background:rgba(255,255,255,0.05);border-radius:10px;padding:14px 16px;font-size:12px;color:rgba(255,255,255,0.6);line-height:1.7;border:1px solid rgba(255,255,255,0.1)">
+          💡 <strong style="color:rgba(255,255,255,0.85)">Why price on the 5% loss?</strong> In practice, filling always results in some product loss — product left in mixing vessels, overfill or spillage during transfer, and container residue. Pricing on the recommended scenario protects your margin even when you don't achieve perfect yield.
+        </div>
+        ` : ''}
+      </div>
+
+      <div class="breakdown-bar">
+        <div class="breakdown-bar-title">Cost Breakdown</div>
+        <div class="bar-track">
+          <div class="bar-seg product" style="width:${pPct}%"></div>
+          <div class="bar-seg packaging" style="width:${kPct}%"></div>
+          <div class="bar-seg other" style="width:${aPct}%"></div>
+        </div>
+        <div class="bar-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#F5821F"></div>Product ${pPct.toFixed(0)}%</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#E8A86B"></div>Packaging ${kPct.toFixed(0)}%</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#C4865A"></div>Other ${aPct.toFixed(0)}%</div>
+        </div>
+      </div>
+    `;
+
+    ar.style.display = 'flex';
+
+    lastData = {
+      batchSize, batchUnit, fillVolume, fillUnit,
+      units100, units98, units95,
+      totalProductCost, totalPackaging, add1, add2, add3, add4, totalAdd, totalBatch,
+      pkgPerUnit, s100, s98, s95, profitInput,
+      pPct, kPct, aPct
+    };
+  }
+
+  function printSheet() {
+    if (!lastData) return;
+    const d = lastData;
+    const productName = document.getElementById('productName').value || 'Product';
+    const dateStr = new Date().toLocaleDateString('en-GH', { year: 'numeric', month: 'long', day: 'numeric' });
+    const cl1 = document.getElementById('customLabel1').value || 'Shipping Bags / Mailers';
+    const cl2 = document.getElementById('customLabel2').value || 'Marketing Budget';
+    const cl3 = document.getElementById('customLabel3').value || 'Other';
+    const bu = document.getElementById('batchUnit').value;
+    const profitVal = document.getElementById('profitInput').value || '0';
+
+    const costModeNote = costMode === 'per-unit'
+      ? `${fmt(parseFloat(document.getElementById('costPerUnit').value)||0)} per ${bu} × ${d.batchSize} ${d.batchUnit}`
+      : `Total batch cost entered directly`;
+
+    const profitNote = profitMode === 'flat'
+      ? `Flat ${fmt(parseFloat(profitVal))} per unit`
+      : `${profitVal}% of unit COGS`;
+
+    const logoSVG = `<svg width="40" height="40" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><circle cx="105" cy="38" r="18" fill="#F5821F"/><circle cx="138" cy="80" r="24" fill="#F5821F"/><circle cx="100" cy="108" r="16" fill="#F5821F"/><ellipse cx="121" cy="59" rx="14" ry="10" fill="#F5821F" transform="rotate(-40 121 59)"/><ellipse cx="119" cy="94" rx="14" ry="10" fill="#F5821F" transform="rotate(40 119 94)"/><circle cx="72" cy="108" r="16" fill="#3D2314"/><circle cx="58" cy="148" r="22" fill="#3D2314"/><circle cx="90" cy="170" r="12" fill="#3D2314"/><ellipse cx="65" cy="128" rx="13" ry="9" fill="#3D2314" transform="rotate(-30 65 128)"/><ellipse cx="74" cy="160" rx="13" ry="9" fill="#3D2314" transform="rotate(30 74 160)"/></svg>`;
+
+    const htmlContent = `<!DOCTYPE html>
+<html>
+<head>
+<title>LCL COGS Summary — ${productName}</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--orange:#F5821F;--brown:#3D2314;--cream:#FAF0E6;--peach:#F5D5B8;--white:#FFFFFF;--light-orange:#FEF0E3;--border:#E8C9A8;--muted:#8B6B52;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Poppins',sans-serif;background:white;color:var(--brown);padding:40px;max-width:740px;margin:0 auto;}
+.ps-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:28px;padding-bottom:20px;border-bottom:3px solid var(--peach);}
+.logo-row{display:flex;align-items:center;gap:10px;}
+.logo-wordmark{display:flex;flex-direction:column;line-height:1.2;}
+.lw1{font-size:11px;font-weight:800;color:var(--brown);letter-spacing:1px;}
+.lw2{font-size:11px;font-weight:800;color:var(--orange);letter-spacing:1px;}
+.lw3{font-size:11px;font-weight:800;color:var(--brown);letter-spacing:1px;}
+.ps-title{text-align:right;}
+.ps-title h2{font-size:26px;font-weight:800;color:var(--brown);}
+.ps-title p{font-size:12px;color:var(--muted);margin-top:4px;}
+.section{margin-bottom:22px;}
+.sec-title{font-size:10px;font-weight:700;color:var(--orange);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--peach);}
+.row{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;border-bottom:1px dashed var(--peach);}
+.row:last-child{border-bottom:none;}
+.rk{color:var(--muted);font-weight:500;}
+.rv{font-weight:600;color:var(--brown);}
+.note{background:var(--light-orange);border-left:3px solid var(--orange);padding:10px 14px;border-radius:0 8px 8px 0;font-size:12px;color:var(--brown);margin:8px 0;line-height:1.7;}
+.overage-box{background:var(--cream);border:1.5px solid var(--peach);border-radius:12px;padding:18px 20px;margin-bottom:22px;}
+.overage-box h3{font-size:13px;font-weight:700;color:var(--brown);margin-bottom:8px;}
+.overage-box p{font-size:12px;color:var(--muted);line-height:1.75;margin-bottom:6px;}
+.scenario-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:12px;}
+.scenario-table th{background:var(--brown);color:white;padding:9px 12px;text-align:left;font-weight:600;font-size:11px;letter-spacing:0.3px;}
+.scenario-table th:first-child{border-radius:8px 0 0 0;}
+.scenario-table th:last-child{border-radius:0 8px 0 0;}
+.scenario-table td{padding:9px 12px;border-bottom:1px solid var(--peach);font-size:12px;}
+.scenario-table tr:last-child td{border-bottom:none;}
+.scenario-table .rec-col{background:#FEF0E3;font-weight:700;color:var(--brown);}
+.scenario-table .rec-head{background:var(--orange) !important;}
+.rec-label{display:inline-block;background:var(--orange);color:white;font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;letter-spacing:0.5px;margin-left:4px;vertical-align:middle;}
+.totals{background:var(--brown);color:white;border-radius:12px;padding:20px 24px;margin-top:4px;}
+.trow{display:flex;justify-content:space-between;padding:6px 0;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.1);}
+.trow:last-child{border-bottom:none;}
+.tk{color:rgba(255,255,255,0.6);}
+.tv{font-weight:700;color:white;}
+.tv.big{font-size:18px;color:var(--orange);}
+.footer{text-align:center;margin-top:28px;font-size:11px;color:var(--muted);padding-top:14px;border-top:1px solid var(--peach);}
+@media print{body{padding:20px;}@page{margin:1cm;}}
+</style>
+</head>
+<body>
+<div class="ps-header">
+  <div class="logo-row">
+    ${logoSVG}
+    <div class="logo-wordmark"><span class="lw1">LUEUR</span><span class="lw2">COSMETICS</span><span class="lw3">LAB</span></div>
+  </div>
+  <div class="ps-title">
+    <h2>COGS Summary</h2>
+    <p>${productName} &nbsp;|&nbsp; ${currency} &nbsp;|&nbsp; ${dateStr}</p>
+  </div>
+</div>
+
+<div class="section">
+  <div class="sec-title">Batch & Fill</div>
+  <div class="row"><span class="rk">Batch Purchased</span><span class="rv">${d.batchSize} ${d.batchUnit}</span></div>
+  <div class="row"><span class="rk">Fill Volume per Container</span><span class="rv">${d.fillVolume} ${d.fillUnit}</span></div>
+  <div class="note">📐 <strong>Expected Fill:</strong> ${d.batchSize} ${d.batchUnit} ÷ ${d.fillVolume} ${d.fillUnit} = <strong>${d.units100} containers</strong> at 100% yield</div>
+</div>
+
+<div class="section">
+  <div class="sec-title">Cost Breakdown</div>
+  <div class="note">🧪 <strong>Product Content:</strong> ${costModeNote} = ${fmt(d.totalProductCost)}</div>
+  <div class="row"><span class="rk">Total Product Content Cost</span><span class="rv">${fmt(d.totalProductCost)}</span></div>
+  <div class="note">📦 <strong>Packaging:</strong> ${fmt(d.pkgPerUnit)} per container × ${d.units100} units = ${fmt(d.totalPackaging)}</div>
+  <div class="row"><span class="rk">Total Packaging Cost</span><span class="rv">${fmt(d.totalPackaging)}</span></div>
+  ${d.add1>0?`<div class="row"><span class="rk">Delivery Fee</span><span class="rv">${fmt(d.add1)}</span></div>`:''}
+  ${d.add2>0?`<div class="row"><span class="rk">${cl1}</span><span class="rv">${fmt(d.add2)}</span></div>`:''}
+  ${d.add3>0?`<div class="row"><span class="rk">${cl2}</span><span class="rv">${fmt(d.add3)}</span></div>`:''}
+  ${d.add4>0?`<div class="row"><span class="rk">${cl3}</span><span class="rv">${fmt(d.add4)}</span></div>`:''}
+  <div class="row"><span class="rk">Total Additional Costs</span><span class="rv">${fmt(d.totalAdd)}</span></div>
+  <div class="row" style="margin-top:4px"><span class="rk" style="font-weight:700;color:var(--brown)">Total Batch Cost</span><span class="rv" style="font-size:15px">${fmt(d.totalBatch)}</span></div>
+</div>
+
+<div class="overage-box">
+  <h3>⚠️ Understanding Filling Loss</h3>
+  <p>When filling cosmetic products, it is normal to lose a small amount of product during production. This happens due to product remaining in mixing vessels and transfer pipes, minor spillage or overfill during the filling process, product absorbed by equipment surfaces, and foam or air pockets displacing fill volume.</p>
+  <p>While your batch is calculated to fill <strong>${d.units100} containers at 100% yield</strong>, in practice you may lose 2–5% of your final product. The table below shows what this means for your unit cost and selling price — and why we recommend pricing on the conservative scenario.</p>
+
+  ${d.profitInput > 0 ? `
+  <table class="scenario-table">
+    <thead>
+      <tr>
+        <th>Scenario</th>
+        <th>Units Filled</th>
+        <th>Unit COGS</th>
+        <th>Selling Price</th>
+        <th>Gross Margin</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>100% Yield (Ideal)</td>
+        <td>${d.s100.units}</td>
+        <td>${fmt(d.s100.unitCOGS)}</td>
+        <td>${fmt(d.s100.sellingPrice)}</td>
+        <td>${d.s100.grossMargin.toFixed(1)}%</td>
+      </tr>
+      <tr>
+        <td>2% Loss</td>
+        <td>${d.s98.units}</td>
+        <td>${fmt(d.s98.unitCOGS)}</td>
+        <td>${fmt(d.s98.sellingPrice)}</td>
+        <td>${d.s98.grossMargin.toFixed(1)}%</td>
+      </tr>
+      <tr>
+        <td class="rec-col">5% Loss <span class="rec-label">✦ RECOMMENDED</span></td>
+        <td class="rec-col">${d.s95.units}</td>
+        <td class="rec-col">${fmt(d.s95.unitCOGS)}</td>
+        <td class="rec-col">${fmt(d.s95.sellingPrice)}</td>
+        <td class="rec-col">${d.s95.grossMargin.toFixed(1)}%</td>
+      </tr>
+    </tbody>
+  </table>
+  <p style="margin-top:10px;font-size:11px;color:var(--muted)">Profit applied: ${profitNote}. Pricing on the 5% loss scenario ensures your margin is protected even if you don't achieve full yield.</p>
+  ` : `
+  <table class="scenario-table">
+    <thead><tr><th>Scenario</th><th>Units Filled</th><th>Unit COGS</th></tr></thead>
+    <tbody>
+      <tr><td>100% Yield (Ideal)</td><td>${d.s100.units}</td><td>${fmt(d.s100.unitCOGS)}</td></tr>
+      <tr><td>2% Loss</td><td>${d.s98.units}</td><td>${fmt(d.s98.unitCOGS)}</td></tr>
+      <tr><td class="rec-col">5% Loss <span class="rec-label">✦ RECOMMENDED</span></td><td class="rec-col">${d.s95.units}</td><td class="rec-col">${fmt(d.s95.unitCOGS)}</td></tr>
+    </tbody>
+  </table>
+  `}
+</div>
+
+<div class="totals">
+  <div class="trow"><span class="tk">Total Batch Cost</span><span class="tv">${fmt(d.totalBatch)}</span></div>
+  <div class="trow"><span class="tk">Unit COGS — 100% Yield</span><span class="tv">${fmt(d.s100.unitCOGS)}</span></div>
+  <div class="trow"><span class="tk">Unit COGS — Recommended (5% Loss)</span><span class="tv">${fmt(d.s95.unitCOGS)}</span></div>
+  ${d.profitInput > 0 ? `
+  <div class="trow"><span class="tk">Selling Price — 100% Yield</span><span class="tv">${fmt(d.s100.sellingPrice)}</span></div>
+  <div class="trow"><span class="tk">✦ Recommended Selling Price (5% Loss)</span><span class="tv big">${fmt(d.s95.sellingPrice)}</span></div>
+  ` : ''}
+</div>
+
+<div class="footer">
+  Calculated using the LCL COGS Calculator &mdash; Lueur Cosmetics Lab &copy; 2026<br>
+  This summary is for internal pricing reference only. Not for distribution.
+</div>
+</body></html>`;
+
+    const w = window.open('', '_blank', 'width=820,height=950');
+    w.document.write(htmlContent);
+    w.document.close();
+    w.focus();
+    setTimeout(() => w.print(), 700);
+  }
+
+  function resetAll() {
+    document.querySelectorAll('input[type="number"], input[type="text"]').forEach(i => {
+      if (i.id === 'customLabel1') i.value = 'Shipping Bags / Mailers';
+      else if (i.id === 'customLabel2') i.value = 'Marketing Budget';
+      else if (i.id === 'customLabel3') i.value = 'Other';
+      else i.value = '';
+    });
+    updateLabel(1); updateLabel(2); updateLabel(3);
+    calculate();
+  }
+
+  syncUnits();
+  calculate();
+</script>
+</body>
+</html>
