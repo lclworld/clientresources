@@ -31,6 +31,9 @@ body{margin:0;background:#fff;color:var(--brown);font-family:Poppins,sans-serif;
 #lcls .badge{display:inline-block;background:var(--orbg);border:1.5px solid #F8D9C2;color:var(--or);border-radius:999px;padding:7px 20px;font-size:12.5px;font-weight:700;letter-spacing:.22em;margin:6px 0 18px}
 #lcls h1 .acc{color:var(--or)}
 #lcls .eb{font-size:12.5px;font-weight:700;letter-spacing:.24em;color:var(--or);margin:0 0 6px;text-transform:uppercase}
+#lcls .locked{background:#FBF6F2;border-radius:18px;padding:14px 18px;margin:6px 0 4px;display:flex;flex-direction:column;gap:2px}
+#lcls .locked span{font-size:12px;font-weight:700;letter-spacing:.18em;color:var(--or);text-transform:uppercase}
+#lcls .locked b{font-size:17px;font-weight:600;color:var(--ink)}
 #lcls .grid{display:grid;grid-template-columns:minmax(0,1fr) 440px;gap:44px;align-items:start}
 #lcls .sec{padding:26px 0;border-top:1px solid var(--line)}
 #lcls .sec:first-child{border-top:0;padding-top:0}
@@ -213,7 +216,7 @@ var FDA=["Product name: brand name and generic name","Net content: weight or vol
 function newP(src){return {pack:"",size:"",body:"W",cap:"",box:false,lt:"",lid:false,design:"White",bg:"#FFFFFF",fg:"#000000",font:1,
   logoMode:"type",logoText:"",logoFile:null,logoScale:1,product:"",generic:"",note:"",dist:src?src.dist:"",view:"front",err:{}};}
 var wrapTok=0,lastWrap=null;window.__wrapReady=Promise.resolve();
-var S={ps:[newP()],act:0,brand:"",name:"",email:"",phone:"",order:"",notes:"",sending:false,done:false,banner:""};
+var S={ps:[newP()],act:0,brand:"",name:"",email:"",phone:"",order:"",notes:"",sending:false,done:false,banner:"",lock:{}};
 function $(s,r){return (r||document).querySelector(s);}
 function $$(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s));}
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
@@ -380,16 +383,18 @@ function productHTML(p,i){
   var k=pk(p.pack),f=PAIRS;
   var h='<div class="pblock'+(i===S.act?' active':'')+'" data-i="'+i+'">';
   h+='<div class="phead"><b>'+(S.ps.length>1?'Product '+(i+1):'Your product')+'</b>'+(i>0?'<button type="button" class="link" data-a="rm">Remove</button>':'')+'</div>';
-  h+='<div class="sec"><div class="eb">Your container</div><h2>Packaging</h2><p class="hint">Choose the packaging you ordered.</p>';
+  h+='<div class="sec"><div class="eb">Your container</div><h2>Packaging</h2>'+(S.lock.pack&&i===0?'':'<p class="hint">Choose the packaging you ordered.</p>');
+  if(S.lock.pack&&i===0){h+='<div class="locked"><span>From your order</span><b>'+esc(k.name)+(p.size?', '+p.size+' '+(k.unit||'ml'):'')+'</b></div>';}
+  else{
   h+='<label class="f">Packaging <span class="req">*</span></label><select data-a="pack">'+opts(PACKS.map(function(x){return [x.id,x.name];}),p.pack,"Choose your packaging")+'</select><div class="err" data-e="pack">'+(p.err.pack||"")+'</div>';
-  if(k&&k.sizes.length){h+='<label class="f">Size <span class="req">*</span></label><select data-a="size">'+opts(k.sizes.map(function(s){return [s,s+" "+(k.unit||"ml")];}),p.size,"Choose your size")+'</select><div class="err" data-e="size">'+(p.err.size||"")+'</div>';}
+  if(k&&k.sizes.length){h+='<label class="f">Size <span class="req">*</span></label><select data-a="size">'+opts(k.sizes.map(function(s){return [s,s+" "+(k.unit||"ml")];}),p.size,"Choose your size")+'</select><div class="err" data-e="size">'+(p.err.size||"")+'</div>';}}
   h+=colorChips(i,p);
-  h+='<label class="check"><input type="checkbox" data-a="box"'+(p.box?' checked':'')+'><div><b>Box</b><span>Tick if your order includes individual boxing.</span></div></label>';
+  if(!(S.lock.box&&i===0))h+='<label class="check"><input type="checkbox" data-a="box"'+(p.box?' checked':'')+'><div><b>Box</b><span>Tick if your order includes individual boxing.</span></div></label>';
   if(p.box)h+='<p class="note">Please email your own box design to <b>'+CONFIG.EMAIL+'</b>.</p>';
   h+='</div>';
-  h+='<div class="sec"><div class="eb">Label shape</div><h2>Label type</h2><p class="hint">Pick the label shape. Want exact label sizes? Just text us.</p><div class="ltype">';
-  var kk=k||pk("pump");
-  ["wrap","fb"].forEach(function(t){var ok=kk.labels.indexOf(t)>-1;
+  var kk=k||pk("pump"),ltLocked=S.lock.lt&&i===0;
+  h+='<div class="sec"><div class="eb">Label shape</div><h2>Label type</h2>'+(ltLocked?'<div class="locked"><span>From your order</span><b>'+(p.lt==="wrap"?"Wrap around":"Front and back")+'</b></div>':'<p class="hint">Pick the label shape. Want exact label sizes? Just text us.</p>')+'<div class="ltype">';
+  if(!ltLocked)["wrap","fb"].forEach(function(t){var ok=kk.labels.indexOf(t)>-1;
     h+='<button type="button" class="lt" data-a="lt" data-v="'+t+'" '+(ok?'':'disabled ')+'aria-pressed="'+(p.lt===t)+'">'+ltIcon(t)+'<b>'+(t==="wrap"?"Wrap around":"Front and back")+'</b><span>'+(t==="wrap"?"One label around the container":"One label on the front, one on the back")+'</span></button>';});
   h+='</div><div class="err" data-e="lt">'+(p.err.lt||"")+'</div>';
   if(kk.lid)h+='<label class="check"><input type="checkbox" data-a="lid"'+(p.lid?' checked':'')+'><div><b>Add a round lid label</b><span>Shows your logo, product name, size and Made in Ghana.</span></div></label>';
@@ -419,10 +424,11 @@ function productHTML(p,i){
 function render(){
   var app=$("#app");
   if(S.done){app.innerHTML='<div class="done"><div class="okc"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div><h1>Thank <span class="acc">you</span></h1><p class="lead" style="margin:0 auto">We are working on your order and will be in touch soon with your label for approval. A copy of your choices is on its way to your email. If you need to reach us, email <b>'+CONFIG.EMAIL+'</b>.</p></div>';window.scrollTo(0,0);return;}
-  var h='<span class="badge">LABEL STUDIO BY LCL</span><h1>Choose <span class="acc">your label</span></h1><p class="lead">Pick your packaging and a design, add your logo and wording, and see your label on your container. Our team will finalise the artwork and send it to you for approval.</p><div class="grid"><div id="left">';
+  var h='<span class="badge">LABEL STUDIO BY LCL</span><h1>Choose <span class="acc">your label</span></h1><p class="lead">'+(S.lock.any?'Pick a design, add your logo and wording, and see your label on your container.':'Pick your packaging and a design, add your logo and wording, and see your label on your container.')+' Our team will finalise the artwork and send it to you for approval.</p><div class="grid"><div id="left">';
   S.ps.forEach(function(p,i){h+=productHTML(p,i);});
-  h+='<button type="button" class="btn ghost" id="addp">Add another product</button>';
-  h+='<div class="sec"><div class="eb">Contact</div><h2>Your details</h2><p class="hint">So we can match your label to your order.</p>'+
+  if(!S.lock.any)h+='<button type="button" class="btn ghost" id="addp">Add another product</button>';
+  if(S.lock.contact)h+='<div class="sec"><div class="eb">Your order</div><div class="locked"><span>Order '+esc(S.order)+'</span><b>'+esc(S.brand)+'</b></div><label class="f">Anything else we should know</label><textarea id="notes" maxlength="500">'+esc(S.notes)+'</textarea><input class="hp" id="website" type="text" tabindex="-1" autocomplete="off" aria-hidden="true"></div>';
+  else h+='<div class="sec"><div class="eb">Contact</div><h2>Your details</h2><p class="hint">So we can match your label to your order.</p>'+
    '<div class="row2"><div><label class="f">Brand name <span class="req">*</span></label><input type="text" id="brand" value="'+esc(S.brand)+'" maxlength="60"><div class="err" data-e="brand">'+(S.eb||"")+'</div></div>'+
    '<div><label class="f">Your name <span class="req">*</span></label><input type="text" id="cname" value="'+esc(S.name)+'" maxlength="60"><div class="err" data-e="name">'+(S.en||"")+'</div></div></div>'+
    '<div class="row2"><div><label class="f">Email <span class="req">*</span></label><input type="email" id="email" value="'+esc(S.email)+'" maxlength="80"><div class="err" data-e="email">'+(S.ee||"")+'</div></div>'+
@@ -539,6 +545,25 @@ function submit(){
   }).then(function(j){if(!j||!j.ok)throw new Error((j&&j.error)||"failed");S.sending=false;S.done=true;render();})
   .catch(function(e){S.sending=false;var why=(e&&e.message)||"unknown";S.banner="Sorry, that did not go through. Please email your choices to "+CONFIG.EMAIL+" and we will take it from there. (Reason: "+why+")";renderKeep();});
 }
+/* ---------- InstaBrand mode: details already known are passed in the link and not asked again ----------
+   Link example: label-studio.html?order=LCL-BC-12345&brand=Maison%20Efua&name=Ama%20Mensah&email=ama%40example.com
+                 &phone=0240000000&pack=pump&size=250&label=wrap&box=1                                         */
+(function(){
+  var q;try{q=new URLSearchParams(location.search);}catch(e){return;}
+  function g(n){return (q.get(n)||"").trim().slice(0,120);}
+  S.order=g("order");S.brand=g("brand");S.name=g("name");S.email=g("email");S.phone=g("phone");
+  var p=S.ps[0],id=g("pack").toLowerCase(),k=pk(id);S.lock={};
+  if(k){p.pack=id;var sz=parseFloat(g("size"));if(sz&&k.sizes.indexOf(sz)>-1)p.size=sz;else if(k.sizes.length===1)p.size=k.sizes[0];
+    var b=bodiesFor(p);p.body=b.indexOf("W")>-1?"W":(b[0]||"W");
+    if(p.size||!k.sizes.length)S.lock.pack=true;
+    var lb=g("label").toLowerCase();if(lb==="fb"||lb==="wrap"){if(k.labels.indexOf(lb)>-1){p.lt=lb;S.lock.lt=true;}}
+    else if(k.labels.length===1){p.lt=k.labels[0];}
+    var bx=g("box");if(bx==="1"||bx==="0"){p.box=bx==="1";S.lock.box=true;}}
+  if(S.brand)p.logoText=S.brand;
+  S.lock.contact=!!(S.order&&S.brand&&S.name&&/^\S+@\S+\.\S+$/.test(S.email));
+  S.lock.any=S.lock.pack||S.lock.lt||S.lock.contact;
+})();
+
 render();
 window.__S=S;
 })();
